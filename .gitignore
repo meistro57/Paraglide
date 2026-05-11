@@ -1,0 +1,14 @@
+node_modules/
+vendor/
+src-tauri/target/
+app/storage/
+app/.env
+*.db
+*.db-journal
+*.enc
+*.bin
+*.gguf
+*.safetensors
+*.onnx
+*.pt
+*.pth
