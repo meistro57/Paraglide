@@ -93,6 +93,16 @@ Paraglide detects your hardware on install and recommends a model tier:
 
 We're building the encrypted desktop shell, the AI backend abstraction (Ollama for production, OpenRouter for dev), and the onboarding flow. No archetype features yet — Phase 1 proves the plumbing is solid before we build on top of it.
 
+### Current Implementation Snapshot
+
+- Laravel 12 app scaffolded under `app/` with SQLCipher-oriented config placeholders.
+- App-layer encryption foundation implemented (`Encryptor` + encrypted model attribute trait).
+- AI backend abstraction implemented (Ollama + OpenRouter backends, resolver, Lyra orchestration service).
+- Onboarding scaffold implemented with persisted progress and route gating (`/` redirects to onboarding until completion).
+- Tauri shell scaffold added under `src-tauri/` with FrankenPHP sidecar lifecycle management.
+- Root dev/build scripts added: `scripts/dev.sh`, `scripts/build.sh`.
+- PHPUnit coverage includes crypto, backend parsing/resolver behavior, Lyra orchestration, and onboarding persistence.
+
 ### Roadmap
 
 - **Phase 1** — Tauri shell, Laravel skeleton, SQLCipher database, onboarding, basic Lyra chat ← *current*

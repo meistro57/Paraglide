@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'ai' => [
+        'default_backend' => env('AI_BACKEND', 'ollama'),
+    ],
+
+    'ollama' => [
+        'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
+        'model' => env('OLLAMA_MODEL', 'llama3.1:8b'),
+    ],
+
+    'openrouter' => [
+        'base_url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
+        'api_key' => env('OPENROUTER_API_KEY'),
+        'referer' => env('OPENROUTER_HTTP_REFERER', 'https://paraglide.app'),
+        'title' => env('OPENROUTER_X_TITLE', 'Paraglide'),
+    ],
+
 ];
