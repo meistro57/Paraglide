@@ -1,4 +1,6 @@
 # Paraglide
+<img width="1292" height="480" alt="image" src="https://github.com/user-attachments/assets/e017b6d2-3816-4184-82f3-d0b18603d819" />
+
 
 > Catch the currents others miss.
 
