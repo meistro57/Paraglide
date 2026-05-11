@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\OnboardingFlow;
+use App\Models\AuditLog;
 use App\Models\OnboardingProgress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -22,7 +23,7 @@ class OnboardingFlowTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        $this->get('/')->assertRedirectToRoute('home');
+        $this->get('/')->assertRedirectToRoute('lock.show');
     }
 
     public function test_password_step_requires_minimum_length_and_confirmation(): void
@@ -46,6 +47,13 @@ class OnboardingFlowTest extends TestCase
         $this->assertSame('password', $progress->current_step);
         $this->assertIsArray($progress->state);
         $this->assertArrayHasKey('recovery_code', $progress->state);
+
+        $audit = AuditLog::query()->where('action', 'onboarding_step_advanced')->first();
+
+        $this->assertNotNull($audit);
+        $this->assertSame('onboarding_progress', $audit->resource_type);
+        $this->assertStringContainsString('"from":"welcome"', $audit->metadata);
+        $this->assertStringContainsString('"to":"password"', $audit->metadata);
     }
 
     public function test_complete_onboarding_sets_completed_at(): void
@@ -58,5 +66,10 @@ class OnboardingFlowTest extends TestCase
         $progress = OnboardingProgress::query()->find(1);
 
         $this->assertNotNull($progress?->completed_at);
+
+        $audit = AuditLog::query()->where('action', 'onboarding_completed')->first();
+
+        $this->assertNotNull($audit);
+        $this->assertSame('onboarding_progress', $audit->resource_type);
     }
 }

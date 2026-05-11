@@ -6,10 +6,20 @@ use App\Models\User;
 use App\Services\AI\BackendResolver;
 use App\Services\AI\Backends\OllamaBackend;
 use App\Services\AI\Backends\OpenRouterBackend;
+use App\Services\Audit\AuditLogger;
+use Mockery;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class BackendResolverTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        Mockery::close();
+
+        parent::tearDown();
+    }
+
     public function test_resolver_falls_back_when_preferred_backend_unavailable(): void
     {
         config()->set('services.openrouter.api_key', null);
@@ -20,7 +30,20 @@ class BackendResolverTest extends TestCase
 
         $openRouter = new OpenRouterBackend();
 
-        $resolver = new BackendResolver($ollama, $openRouter);
+        /** @var MockInterface&AuditLogger $auditLogger */
+        $auditLogger = Mockery::mock(AuditLogger::class);
+        $auditLogger->shouldReceive('log')->once()->with(
+            'ai_backend_fallback',
+            'user',
+            null,
+            [
+                'preferred' => 'openrouter',
+                'resolved' => 'ollama',
+                'fallback' => true,
+            ],
+        )->andReturn(new \App\Models\AuditLog());
+
+        $resolver = new BackendResolver($ollama, $openRouter, $auditLogger);
 
         $user = new User([
             'preferred_backend' => 'openrouter',
@@ -41,7 +64,20 @@ class BackendResolverTest extends TestCase
 
         $openRouter = new OpenRouterBackend();
 
-        $resolver = new BackendResolver($ollama, $openRouter);
+        /** @var MockInterface&AuditLogger $auditLogger */
+        $auditLogger = Mockery::mock(AuditLogger::class);
+        $auditLogger->shouldReceive('log')->once()->with(
+            'ai_backend_selected',
+            'user',
+            null,
+            [
+                'preferred' => 'openrouter',
+                'resolved' => 'openrouter',
+                'fallback' => false,
+            ],
+        )->andReturn(new \App\Models\AuditLog());
+
+        $resolver = new BackendResolver($ollama, $openRouter, $auditLogger);
 
         $user = new User([
             'preferred_backend' => 'openrouter',

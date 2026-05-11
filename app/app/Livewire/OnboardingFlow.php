@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\OnboardingProgress;
+use App\Services\Audit\AuditLogger;
+use App\Services\Security\SessionUnlockManager;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 
@@ -72,6 +74,8 @@ class OnboardingFlow extends Component
             $this->validate($rules);
         }
 
+        $fromStep = $this->step;
+
         if ($this->step === 'welcome') {
             $this->step = 'password';
         } elseif ($this->step === 'password') {
@@ -84,7 +88,14 @@ class OnboardingFlow extends Component
             $this->step = 'done';
         }
 
-        $this->persist();
+        $progress = $this->persist();
+
+        app(AuditLogger::class)->log('onboarding_step_advanced', 'onboarding_progress', $progress->id, [
+            'from' => $fromStep,
+            'to' => $this->step,
+            'backend' => $this->backend,
+            'hardware_tier' => $this->hardwareTier,
+        ]);
     }
 
     public function completeOnboarding(): void
@@ -97,6 +108,14 @@ class OnboardingFlow extends Component
         $progress->forceFill([
             'completed_at' => now(),
         ])->save();
+
+        app(AuditLogger::class)->log('onboarding_completed', 'onboarding_progress', $progress->id, [
+            'backend' => $this->backend,
+            'hardware_tier' => $this->hardwareTier,
+            'has_openrouter_key' => $this->openrouterApiKey !== '',
+        ]);
+
+        app(SessionUnlockManager::class)->unlock();
 
         $this->redirectRoute('home', navigate: true);
     }

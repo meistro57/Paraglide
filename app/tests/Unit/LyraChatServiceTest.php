@@ -2,10 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AI\BackendResolver;
 use App\Services\AI\Contracts\AIBackend;
 use App\Services\AI\LyraChatService;
+use App\Services\Audit\AuditLogger;
 use Mockery;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -24,7 +26,8 @@ class LyraChatServiceTest extends TestCase
         config()->set('lyra.system_prompt', 'System prompt');
 
         $resolver = Mockery::mock(BackendResolver::class);
-        $service = new LyraChatService($resolver);
+        $auditLogger = Mockery::mock(AuditLogger::class);
+        $service = new LyraChatService($resolver, $auditLogger);
 
         $messages = $service->buildMessages([
             ['role' => 'assistant', 'content' => 'Hi there'],
@@ -69,7 +72,28 @@ class LyraChatServiceTest extends TestCase
         $resolver = Mockery::mock(BackendResolver::class);
         $resolver->shouldReceive('forUser')->once()->andReturn($backend);
 
-        $service = new LyraChatService($resolver);
+        /** @var MockInterface&AuditLogger $auditLogger */
+        $auditLogger = Mockery::mock(AuditLogger::class);
+        $auditLogger->shouldReceive('log')->once()->with(
+            'lyra_chat_requested',
+            'user',
+            null,
+            [
+                'history_messages' => 0,
+                'prompt_length' => 10,
+                'options' => [],
+            ],
+        )->andReturn(new AuditLog());
+        $auditLogger->shouldReceive('log')->once()->with(
+            'lyra_chat_stream_completed',
+            'user',
+            null,
+            [
+                'chunks' => 2,
+            ],
+        )->andReturn(new AuditLog());
+
+        $service = new LyraChatService($resolver, $auditLogger);
         $user = new User(['preferred_backend' => 'ollama']);
 
         $chunks = iterator_to_array($service->streamResponse($user, [], 'Hello Lyra'));

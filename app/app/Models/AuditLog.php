@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 class AuditLog extends Model
 {
@@ -32,5 +33,16 @@ class AuditLog extends Model
         return [
             'created_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(static function (): void {
+            throw new LogicException('Audit logs are append-only.');
+        });
+
+        static::deleting(static function (): void {
+            throw new LogicException('Audit logs are append-only.');
+        });
     }
 }

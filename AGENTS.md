@@ -12,10 +12,12 @@
   - `app/Models/Concerns/HasEncryptedAttributes.php` — model trait for encrypted fields
   - `app/Services/AI/` — backend contract, Ollama/OpenRouter backends, resolver, Lyra chat service
   - `app/Livewire/OnboardingFlow.php` + `resources/views/livewire/onboarding-flow.blade.php` — onboarding scaffold
+  - `app/Livewire/LyraChat.php` + `resources/views/livewire/lyra-chat.blade.php` — chat scaffold with encrypted persistence
+  - `app/Http/Controllers/LockController.php`, `app/Http/Middleware/EnsureSessionUnlocked.php`, `app/Services/Security/SessionUnlockManager.php` — lock/unlock + idle timeout flow
   - `database/migrations/` — users, AI tables, onboarding progress
   - `tests/Unit` and `tests/Feature` — PHPUnit suite covering crypto, AI backends, onboarding, routes
 - `src-tauri/` — Tauri 2 shell scaffold with sidecar lifecycle (`main.rs`, `sidecar.rs`, `lifecycle.rs`)
-- `scripts/dev.sh`, `scripts/build.sh` — root developer scripts
+- `scripts/start.sh`, `scripts/dev.sh`, `scripts/build.sh` — root developer scripts
 - `docs/decisions/0001-stack-choice.md` — initial ADR
 
 ## Commands
@@ -33,12 +35,14 @@ composer dev
 ### Root scripts
 
 ```bash
+./scripts/start.sh
 ./scripts/dev.sh
 ./scripts/build.sh
 ```
 
 Notes:
-- `scripts/dev.sh` starts Ollama if installed, installs deps, migrates DB, and runs `cargo tauri dev` when Rust tooling exists.
+- `scripts/start.sh` installs dependencies, creates `.env` if needed, generates APP_KEY, migrates DB, starts Ollama when present, then runs `cargo tauri dev` (or `composer dev` fallback).
+- `scripts/dev.sh` delegates to `scripts/start.sh`.
 - `scripts/build.sh` builds Laravel assets and Tauri bundles into `dist/`.
 
 ## Implemented Patterns
@@ -63,9 +67,10 @@ Notes:
 
 ### Onboarding flow
 
-- Root route redirects to onboarding until completion; then redirects to home.
+- Root route redirects to onboarding until completion, then to lock/home depending on unlock state.
 - Progress persisted in `onboarding_progress` table (single-row workflow via id=1).
 - Livewire flow steps currently scaffolded: welcome → password → recovery → hardware → backend → done.
+- Completing onboarding unlocks the session; idle timeout and manual lock require password re-entry.
 
 ## Test Suite
 
@@ -80,8 +85,9 @@ Coverage currently includes:
 - Encrypted attribute storage/readback
 - Ollama/OpenRouter request formatting and stream parsing
 - Backend resolver fallback behavior
-- Lyra chat orchestration
+- Lyra chat orchestration and encrypted message persistence
 - Onboarding route/validation/progress persistence
+- Lock/unlock and idle-timeout gating
 
 ## Config Keys in Active Use
 
@@ -89,6 +95,7 @@ Coverage currently includes:
 - AI/backend keys: `AI_BACKEND`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OPENROUTER_*`
 - `config/openrouter.php` for default and curated model list
 - `config/lyra.php` for system prompt
+- `config/paraglide.php` for `unlock_idle_timeout_minutes`
 
 ## Gotchas
 

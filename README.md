@@ -98,10 +98,12 @@ We're building the encrypted desktop shell, the AI backend abstraction (Ollama f
 - Laravel 12 app scaffolded under `app/` with SQLCipher-oriented config placeholders.
 - App-layer encryption foundation implemented (`Encryptor` + encrypted model attribute trait).
 - AI backend abstraction implemented (Ollama + OpenRouter backends, resolver, Lyra orchestration service).
-- Onboarding scaffold implemented with persisted progress and route gating (`/` redirects to onboarding until completion).
+- Onboarding scaffold implemented with persisted progress and route gating.
+- Lock screen + idle-timeout unlock flow implemented with manual lock actions.
+- Lyra chat interface scaffold implemented with streaming responses, encrypted message persistence, and audit logging.
 - Tauri shell scaffold added under `src-tauri/` with FrankenPHP sidecar lifecycle management.
-- Root dev/build scripts added: `scripts/dev.sh`, `scripts/build.sh`.
-- PHPUnit coverage includes crypto, backend parsing/resolver behavior, Lyra orchestration, and onboarding persistence.
+- Root scripts added: `scripts/start.sh`, `scripts/dev.sh`, `scripts/build.sh`.
+- PHPUnit coverage includes crypto, backend parsing/resolver behavior, onboarding, lock/unlock, and chat persistence.
 
 ### Roadmap
 
@@ -134,23 +136,10 @@ We're building the encrypted desktop shell, the AI backend abstraction (Ollama f
 ```bash
 git clone https://github.com/<your-username>/paraglide.git
 cd paraglide
-
-# Install Laravel dependencies
-cd app
-composer install
-cp .env.example .env
-php artisan key:generate
-
-# Build the frontend
-npm install
-npm run build
-
-# Back to root, run dev mode
-cd ..
-./scripts/dev.sh
+./scripts/start.sh
 ```
 
-The Tauri window will launch, FrankenPHP will spin up serving the Laravel app on a random localhost port, and the onboarding flow will guide you through setup.
+`./scripts/start.sh` installs dependencies, creates `app/.env` if missing, generates `APP_KEY` when needed, runs migrations, starts Ollama if installed, and then launches Tauri dev mode (or falls back to `composer dev` when Rust tooling is unavailable).
 
 ---
 
